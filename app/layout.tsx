@@ -7,15 +7,35 @@ import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import Link from "next/link";
 import "./globals.css";
+import { Metadata } from 'next'
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "http://localhost:3000";
 
-export const metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
+export const metadata: Metadata = {
+  metadataBase: new URL("http://localhost:3000"),
+  title: "Ghost MNKY - Destiny 2 Clan Management",
+  description: "Your ultimate Destiny 2 clan management platform. Connect with Discord, manage your clan, and organize events.",
+  openGraph: {
+    title: "Ghost MNKY - Destiny 2 Clan Management",
+    description: "Your ultimate Destiny 2 clan management platform",
+    type: "website",
+    images: [
+      {
+        url: "/images/GIRTH_ICON.png",
+        width: 800,
+        height: 800,
+        alt: "Ghost MNKY Logo"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ghost MNKY - Destiny 2 Clan Management",
+    description: "Your ultimate Destiny 2 clan management platform",
+    images: ["/images/GIRTH_ICON.png"]
+  }
 };
 
 const geistSans = Geist({

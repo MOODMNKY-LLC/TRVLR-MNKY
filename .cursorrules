@@ -1,0 +1,1027 @@
+# Project Structure Maintenance
+- Update `instructions/project-structure.md` whenever significant changes are made to the project structure
+- Keep directory structure documentation up to 4 levels deep
+- Include descriptions for new directories and key files
+- Maintain consistency with existing naming conventions and organization
+
+---
+
+Below is a comprehensive development roadmap outlining milestones, tasks, and best practices for building a Destiny 2 Clan Management Platform with the specified tech stack. The plan is broken down into phases—some tasks can be performed in parallel where appropriate, but the overall structure helps ensure a logical progression from concept to launch.
+
+---
+
+## **PHASE 0: PLANNING & FOUNDATION**
+
+### **0.1 Requirements & Specifications**
+- **Feature Definition**  
+  - Finalize the feature set: clan registration, user authentication (Discord + Bungie), real-time chat, event scheduling, inventory management, AI-driven loadout recommendations, etc.
+  - Clarify user flow: how users move from unauthenticated to authenticated, how they link Destiny 2 accounts, etc.
+- **Gather Documentation**  
+  - Review Bungie.net API docs, especially OAuth and the relevant GroupV2/Destiny2 endpoints.  
+  - Familiarize yourself with Supabase’s documentation (Auth, Database, Realtime, Edge Functions) and Next.js 13+ features (App Router, server components, etc.).
+
+### **0.2 Tech Stack Validation**
+- **Check and confirm versions**: Decide on Next.js version (e.g., 13 with App Router), TypeScript version, Supabase client version, etc.
+- **Align on UI Libraries**: Confirm usage of Shadcn components with Tailwind CSS for a cohesive, themeable design system.
+- **Confirm AI Tools**: Determine how you’ll host and call OpenAI (API key management, usage limits), Flowise, and Ollama (for local AI model inference).
+
+### **0.3 Project Setup**
+- **Version Control**: Initialize a Git repository and set up branching strategy (e.g., GitFlow or trunk-based).
+- **Task Management**: Use project management tools like Jira, Trello, or Notion to track tasks and sprints.
+- **CI/CD Pipeline**: Evaluate using GitHub Actions, GitLab CI, or another solution to automate build checks, linting, and tests.
+
+---
+
+## **PHASE 1: INITIAL INFRASTRUCTURE & BASE APP**
+
+### **1.1 Repository & Environment Setup**
+1. **Create Next.js Project**  
+   - Use `create-next-app --typescript` or a similar scaffold.  
+   - Configure folder structure (e.g., `app/` or `pages/` approach).
+2. **Install Core Dependencies**  
+   - `react`, `react-dom`, `next`, `typescript`, `shadcn/ui`, `tailwindcss`, `axios`, `supabase-js`, `@supabase/supabase-js`, `openai`, etc.  
+   - Set up Tailwind (via `tailwind.config.js`) and Shadcn config for your design system.
+3. **Supabase Integration**  
+   - Create a new Supabase project.  
+   - Store Supabase environment variables in `.env.local` (e.g., `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`).  
+   - Initialize client in a dedicated utility file (`utils/supabaseClient.ts`).
+
+### **1.2 Database Modeling**
+1. **Schema Design**  
+   - **Auth/Users**: Supabase manages basic auth. Extend with tables for user profiles, linking Discord/Bungie accounts.  
+   - **Clans**: `clans` table with details about each clan.  
+   - **Membership**: `clan_memberships` table to relate users to clans (with roles, e.g., admin, member).  
+   - **Messages**: Table for chat messages, referencing a `channel_id` and user.  
+   - **Events/Activities**: Table for scheduled clan activities (e.g., raids, strikes).  
+   - **AI/Recommendations**: Possibly store prompts, user loadout preferences, or feedback data if needed.
+2. **Security Policies**  
+   - Implement Row-Level Security (RLS) where necessary.  
+   - Write policies to ensure only authorized users can read/write clan data.
+
+### **1.3 Basic User Authentication (Discord)**
+1. **Set Up OAuth with Discord**  
+   - In Supabase **Authentication** settings, enable the Discord provider.  
+   - Provide client ID/secret from the [Discord Developer Portal](https://discord.com/developers).  
+2. **Login Flow in Next.js**  
+   - Create a simple login button: `supabase.auth.signInWithOAuth({ provider: 'discord' })`.  
+   - On success, store user details in `auth.users` and create an extended profile record if needed.
+
+### **1.4 GitHub Actions & Testing**
+- **Automated Builds & Linting**  
+  - Configure ESLint, Prettier, and TypeScript checks.  
+  - Add a GitHub Actions workflow for pull requests to run lint/tests.
+- **Unit Tests**  
+  - Set up testing framework (e.g., Jest, React Testing Library).  
+  - Write initial tests for utility functions and basic UI components.
+
+---
+
+## **PHASE 2: CORE FUNCTIONALITY**
+
+### **2.1 Bungie OAuth Integration**
+1. **Bungie Developer App**  
+   - Register your application on [Bungie.net](https://www.bungie.net/en/Application) to get a `client_id` and `client_secret`.  
+   - Add a redirect URI pointing to an API route in Next.js (e.g., `/api/bungie/callback`).
+2. **Token Exchange & Storage**  
+   - Create an API route (`pages/api/bungie/callback.ts` or Next.js 13 Route Handler) to handle the OAuth flow and exchange codes for access tokens.  
+   - Store tokens securely in Supabase (with encryption if possible).  
+   - Implement a token refresh strategy if using short-lived tokens.
+
+### **2.2 Clan Management**
+1. **Clan Creation & Registration**  
+   - Build a Next.js page to allow an authenticated user to create or register a clan.  
+   - Integrate with Bungie’s GroupV2 endpoints to sync clan data (e.g., name, about, motto).  
+2. **Roster Display**  
+   - Use Bungie’s endpoints to fetch clan members and sync to Supabase.  
+   - Build roster UI in Next.js, showing user’s Discord handle, Bungie character info, etc.
+3. **Admin Panel**  
+   - Implement role-based access with Supabase RLS.  
+   - Admins can manage clan invites, member roles, and basic settings.
+
+### **2.3 Realtime Chat**
+1. **Supabase Realtime**  
+   - Create a `messages` table in Supabase for chat messages.  
+   - Enable Realtime on that table and subscribe on the client side.  
+2. **Channel Concept**  
+   - Possibly different channels: `#general-clan-chat`, `#raid-planning`, etc.  
+   - Use `channel_id` or similar to segment chat data.  
+3. **UI/UX with Shadcn + Tailwind**  
+   - Use Shadcn components for chat messages, input boxes, and user avatars.
+
+### **2.4 Event Scheduler & Raid Planner**
+1. **Events Table**  
+   - Fields for event name, date/time, clan ID, required level, possible participants, etc.  
+   - Link the event to a channel or thread in chat for discussion.  
+2. **UI Integration**  
+   - Calendar or list-view of upcoming events.  
+   - Button to “Join Raid” or “Leave Raid.”  
+   - Display user readiness (light level, class, etc., pulled from Bungie’s API).
+
+### **2.5 Manifest Integration**
+1. **Scheduled Download (n8n)**  
+   - Use an n8n Cron workflow to fetch the latest Manifest from Bungie and store it in Supabase or S3.  
+   - If using SQLite from Bungie, consider parsing or storing relevant JSON sections in Supabase.
+2. **In-App Usage**  
+   - Access item data, weapon stats, perk details, etc., for loadout recommendations and general info.
+
+---
+
+## **PHASE 3: AI & AUTOMATIONS**
+
+### **3.1 Basic AI Integration (OpenAI & Flowise)**
+1. **Loadout Recommendations**  
+   - Build a Next.js API route that calls Flowise or OpenAI to generate recommended loadouts based on user data (e.g., weapons owned, class, upcoming activity).  
+   - Store or cache results to reduce repeat API calls.
+2. **Contextual Chatbot**  
+   - Integrate Flowise with Destiny 2 data (Manifest, known strategies) to answer user queries about raids, boss strats, etc.  
+   - Possibly create a “/ask-ghost” chat command in the real-time channel to feed queries to the AI.
+
+### **3.2 Ollama for Local AI**
+1. **Installation & Configuration**  
+   - Set up Ollama locally or in a self-hosted environment to run LLMs that can answer Destiny 2 questions.  
+   - Decide on memory/compute resources needed.
+2. **Hybrid Approach**  
+   - Use Ollama for day-to-day queries to reduce costs, and fall back to OpenAI for specialized tasks if needed.  
+   - Keep a consistent interface in Flowise so the front-end is mostly unchanged.
+
+### **3.3 n8n Workflows**
+1. **Automated Notifications**  
+   - Send reminders for upcoming events to relevant clan members via Discord webhook or in-app notifications.  
+   - Trigger loot highlights or newly discovered items for users who are playing actively.
+2. **Monitoring & Error Handling**  
+   - Set up n8n to check for token expiration or API error rates.  
+   - Send alerts to admins via email/Discord.
+
+---
+
+## **PHASE 4: POLISH & DEPLOYMENT**
+
+### **4.1 Final UI/UX Enhancements**
+- **Responsive & Consistent**  
+  - Ensure all Shadcn components are consistently themed with Tailwind.  
+  - Test on mobile, tablet, and desktop.  
+- **Accessibility & Internationalization**  
+  - Add basic ARIA tags, keyboard navigation, and language support (if needed).
+
+### **4.2 Performance Optimization**
+- **Next.js SSR vs. SSG**  
+  - Optimize pages that can be statically generated (e.g., public clan listings).  
+  - Use SSR or dynamic server actions for user-specific data (e.g., personal dashboards).
+- **Caching**  
+  - Use HTTP caching headers for static assets.  
+  - Implement caching at the API layer for frequently accessed data (e.g., item definitions from the Manifest).
+
+### **4.3 Production Deployment**
+1. **Supabase**  
+   - Confirm database usage, set up backups, finalize RLS policies.  
+   - Configure custom domains, if using Supabase’s hosting.
+2. **Next.js**  
+   - Deploy to Vercel, AWS, DigitalOcean, or your preferred platform.  
+   - Ensure environment variables (e.g., BUNGIE_CLIENT_SECRET) are securely stored in platform config.
+3. **Monitoring & Logs**  
+   - Use solutions like LogRocket, Datadog, or Sentry for error tracking.  
+   - Set up alerts for high error rates or performance bottlenecks.
+
+---
+
+## **PHASE 5: ONGOING MAINTENANCE & FUTURE EXPANSION**
+
+### **5.1 Feature Iterations**
+- **Player Trading & Loadout Sharing**  
+  - Expand inventory management with item transferring (if Bungie’s API permits it).  
+  - Allow users to showcase or share loadouts.
+- **Clan Alliances & Cross-Clan Events**  
+  - Allow multiple clans to join bigger events and share rosters.
+
+### **5.2 Community Feedback & Support**
+- **User Feedback Loops**  
+  - Incorporate feedback forms or user upvotes for new features.  
+- **Support & Documentation**  
+  - Write wiki pages or user guides explaining how to set up advanced features (like linking Destiny 2 accounts, scheduling raids, or using AI loadout recommendations).
+
+### **5.3 Scaling & Enterprise Considerations**
+- **Performance Tuning**  
+  - If user base grows, move to more robust infrastructure for Supabase, n8n, and Ollama.  
+- **Security & Compliance**  
+  - Periodic audits for data privacy, possible GDPR compliance if you have EU-based users.  
+- **Localization**  
+  - Expand language options if your clan network becomes global.
+
+---
+
+## **Conclusion**
+
+This roadmap provides a structured plan to develop and refine a Destiny 2 clan management platform using Next.js, Supabase, Shadcn, Tailwind, TypeScript, n8n, OpenAI, Flowise, and Ollama. Each phase builds on the previous, ensuring the core functionality is solid before introducing advanced features like AI-driven loadouts and local language models. By following these steps—planning carefully, adhering to best practices, and iterating based on user feedback—you’ll be well on your way to delivering a robust, feature-rich community hub for Destiny 2 clans.
+
+Integrating Discord into your Destiny 2 Clan Management Platform without replacing its core functionality allows you to harmoniously leverage Discord's existing capabilities while adding value. Here’s how you can achieve this:
+
+---
+
+### **Integration Goals**
+1. **Seamless Authentication**: Use Discord as a primary authentication method for ease of access and community connectivity.
+2. **Enhanced Communication**: Sync Discord channels with in-app features like clan chat and event planning.
+3. **Rich Notifications**: Deliver relevant app notifications directly to Discord to keep users engaged.
+4. **Data Enrichment**: Pull and display Discord data (e.g., roles, usernames) to personalize the app experience.
+
+---
+
+### **Discord Integration Features**
+
+#### 1. **Authentication and User Management**
+- **OAuth2 Integration**:
+  - Use Discord's OAuth2 for authentication.
+  - Sync user profiles, including Discord username, avatar, and roles.
+  - On first login:
+    - Create a user profile in your app using data from Discord (e.g., `discord_id`, `username`, `avatar_url`).
+    - Allow users to link additional accounts (e.g., Bungie.net) after Discord login.
+  - Maintain session tokens to verify user identity for in-app actions.
+
+- **Role-Based Access Control**:
+  - Map Discord roles to app-specific permissions (e.g., Admin, Moderator, Member).
+  - Automatically update permissions when roles change in Discord.
+
+#### 2. **In-App Chat Linked to Discord**
+- **Channel Mirroring**:
+  - Sync specific Discord channels with in-app chat rooms (e.g., #general, #raid-planning).
+  - Use Discord's APIs to fetch and display messages in real-time within the app.
+  - Allow users to post messages in synced channels via the app.
+
+- **Message Enrichment**:
+  - Add app-specific context (e.g., activity participation status) to messages sent to Discord.
+  - Highlight app-linked actions in Discord (e.g., “Simeon signed up for tonight’s raid”).
+
+#### 3. **Event and Raid Notifications**
+- **Webhook Notifications**:
+  - Use Discord webhooks to send event reminders and updates to designated Discord channels.
+  - Examples:
+    - Post an automatic message when a new clan event is created.
+    - Notify participants 15 minutes before an event starts.
+    - Share raid completion stats or achievements.
+
+- **Activity Syncing**:
+  - Sync in-app activity planning (e.g., raids, strikes) with Discord events.
+  - Allow users to RSVP to activities either via the app or Discord using bot commands.
+
+#### 4. **Rich User Engagement**
+- **Bots for Utility**:
+  - Develop a Discord bot for advanced interactions, such as:
+    - Joining a clan by reacting to a message.
+    - Fetching stats or inventory via commands like `!inventory` or `!stats`.
+    - Assigning roles in Discord based on in-app actions (e.g., completing an event unlocks a role).
+  - Link bot actions to app workflows (e.g., automatically update raid signups).
+
+- **Discord Rich Presence**:
+  - Display user activity (e.g., "Planning a Raid" or "Managing Inventory") in their Discord status using Discord’s Rich Presence API.
+
+#### 5. **Profile Enrichment**
+- **Cross-Linking Profiles**:
+  - Display Discord details (e.g., avatar, username, roles) on user profiles within the app.
+  - Allow users to share app-generated achievements (e.g., raid completion) in Discord with one click.
+
+- **Role-Based Badges**:
+  - Use Discord roles to automatically assign in-app badges or titles.
+  - Example: A user with the "Raid Leader" role in Discord receives an equivalent badge in the app.
+
+#### 6. **Admin Tools**
+- **Moderation Features**:
+  - Sync moderation actions:
+    - Bans or mutes in the app reflect on Discord and vice versa.
+    - Allow admins to manage app-linked roles directly from Discord.
+  - Build moderation dashboards that pull audit logs from Discord for in-app display.
+
+- **Activity Insights**:
+  - Provide insights into Discord server activity (e.g., active users, most used channels) to help admins manage community engagement.
+
+---
+
+### **Technical Implementation**
+
+#### Discord API Use Cases:
+1. **OAuth2 Authentication**:
+   - Endpoints: `/oauth2/authorize`, `/oauth2/token`, `/users/@me`
+   - Use `identity`, `email`, and `guilds` scopes to fetch user data and server memberships.
+
+2. **Guild Data**:
+   - Endpoint: `/guilds/{guild.id}`
+   - Fetch details about linked Discord servers, such as roles, members, and channels.
+
+3. **Message Integration**:
+   - Endpoint: `/channels/{channel.id}/messages`
+   - Retrieve and send messages to sync Discord and in-app chat.
+
+4. **Webhooks**:
+   - Use Discord webhooks for event notifications.
+   - Example: A webhook posts to `#raid-updates` when an event is created in the app.
+
+5. **Bot Actions**:
+   - Use bot commands to interact with app data.
+   - Example: Fetch inventory or raid data using `!inventory` or `!raidstatus`.
+
+#### App Features Using Discord:
+- Build server-side listeners for Discord events (e.g., role changes, new messages) using libraries like [Discord.js](https://discord.js.org/).
+- Use webhooks for real-time notifications without polluting chat.
+
+#### Security Considerations:
+- Protect API tokens and bot tokens using environment variables.
+- Validate incoming requests from Discord (e.g., webhook payloads) to prevent spoofing.
+- Rate-limit API requests to avoid hitting Discord's rate limits.
+
+---
+
+### **User Flow Examples**
+
+1. **Login & Profile Linking**:
+   - User logs in with Discord OAuth2.
+   - App fetches Discord roles and applies corresponding permissions.
+   - User optionally links Bungie.net account for full app functionality.
+
+2. **Event Syncing**:
+   - Clan admin creates a raid event in the app.
+   - Event is automatically posted to a specific Discord channel.
+   - Users can RSVP via app or Discord bot commands.
+
+3. **Real-Time Chat**:
+   - Users post in a synced app channel.
+   - Message is sent to the corresponding Discord channel in real-time.
+   - Discord messages appear in the app for cross-platform communication.
+
+---
+
+Below is the **breakdown of each section of the tech stack** in a format similar to the Discord integration breakdown, designed for a unified, detailed instruction set.
+
+---
+
+## **Tech Stack Sections**
+
+### **1. Next.js**
+#### Purpose
+- Serve as the foundation for building a dynamic, scalable, and modern web application with React.
+- Enable server-side rendering (SSR) and static site generation (SSG) for optimal performance and SEO.
+
+#### Features and Integration
+1. **App Routing**:
+   - Use the **App Router (Next.js 13+)** for server components and layouts.
+   - Organize routes into logical folders:
+     ```
+     app/
+     ├── dashboard/
+     ├── events/
+     ├── clan/
+     ├── profile/
+     ├── api/
+     ```
+
+2. **SSR and SSG**:
+   - Use SSR for user-specific data, like personalized dashboards.
+   - Generate static pages (SSG) for public content, like clan listings or FAQs.
+
+3. **Dynamic API Routes**:
+   - Create backend API routes (e.g., `/api/bungie/callback`) for handling Bungie and Discord OAuth flows.
+   - Use middleware for token validation and session management.
+
+4. **Middleware**:
+   - Protect routes with authentication middleware:
+     ```javascript
+     export async function middleware(request) {
+       const token = request.cookies.get('auth_token');
+       if (!token) {
+         return NextResponse.redirect('/login');
+       }
+       return NextResponse.next();
+     }
+     ```
+
+5. **Error Handling**:
+   - Implement custom error pages (`pages/404.js`, `pages/500.js`).
+   - Use try-catch blocks in API routes for graceful error handling.
+
+#### Best Practices
+- Enable ISR (Incremental Static Regeneration) for pages that need periodic updates (e.g., activity schedules).
+- Use Next.js built-in image optimization for assets.
+- Employ ESLint and Prettier for consistent coding standards.
+
+---
+
+### **2. Supabase**
+#### Purpose
+- Handle authentication, real-time data, database operations, and edge functions seamlessly.
+
+#### Features and Integration
+1. **Authentication**:
+   - Configure Discord and Bungie OAuth providers in Supabase Auth.
+   - Protect sensitive data with Row-Level Security (RLS) policies.
+
+2. **Database**:
+   - Define schemas for core features:
+     - **Users**:
+       ```sql
+       CREATE TABLE users (
+         id UUID PRIMARY KEY,
+         discord_id TEXT UNIQUE,
+         bungie_id TEXT UNIQUE,
+         avatar_url TEXT,
+         display_name TEXT
+       );
+       ```
+     - **Clans**:
+       ```sql
+       CREATE TABLE clans (
+         id UUID PRIMARY KEY,
+         name TEXT,
+         description TEXT,
+         admin_id UUID REFERENCES users(id),
+         created_at TIMESTAMP DEFAULT now()
+       );
+       ```
+     - **Messages**:
+       ```sql
+       CREATE TABLE messages (
+         id UUID PRIMARY KEY,
+         channel_id UUID,
+         user_id UUID REFERENCES users(id),
+         content TEXT,
+         created_at TIMESTAMP DEFAULT now()
+       );
+       ```
+
+3. **Realtime**:
+   - Enable Realtime updates for the `messages` table to power live chat:
+     ```javascript
+     const subscription = supabase
+       .channel('messages')
+       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
+         console.log('New message received:', payload);
+       })
+       .subscribe();
+     ```
+
+4. **Edge Functions**:
+   - Create serverless functions for resource-heavy tasks, like syncing Bungie manifests:
+     - Example: Sync manifest every 24 hours with a Supabase Edge Function.
+
+#### Best Practices
+- Index frequently queried fields (e.g., `created_at`, `user_id`) for performance.
+- Monitor database size and optimize queries to avoid hitting limits.
+
+---
+
+### **3. Shadcn + Tailwind CSS**
+#### Purpose
+- Provide a consistent and highly customizable UI framework for the app.
+
+#### Features and Integration
+1. **Shadcn Components**:
+   - Use pre-built components like buttons, modals, and dropdowns for consistent design.
+   - Customize themes to align with your brand:
+     ```javascript
+     export const theme = {
+       colors: {
+         primary: '#1a202c',
+         secondary: '#718096',
+       },
+     };
+     ```
+
+2. **Responsive Design**:
+   - Tailor layouts for mobile, tablet, and desktop:
+     ```html
+     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+       <!-- Content -->
+     </div>
+     ```
+
+3. **Utility Classes**:
+   - Utilize Tailwind's utility-first CSS for quick styling:
+     ```html
+     <button class="bg-primary text-white py-2 px-4 rounded hover:bg-secondary">
+       Click Me
+     </button>
+     ```
+
+#### Best Practices
+- Avoid deeply nested components for performance.
+- Test for accessibility (e.g., keyboard navigation, color contrast).
+
+---
+
+### **4. Bungie.net API**
+#### Purpose
+- Access Destiny 2 data for features like inventory management, clan information, and activity history.
+
+#### Features and Integration
+1. **Authentication**:
+   - Use Bungie OAuth for user login and token exchange:
+     - Redirect users to:
+       ```
+       https://www.bungie.net/en/oauth/authorize?client_id=CLIENT_ID&response_type=code
+       ```
+     - Handle token exchange at `/api/bungie/callback`.
+
+2. **Key Endpoints**:
+   - **Manifest**:
+     - `GET /Destiny2/Manifest/`:
+       Sync game data to display item stats, activity details, etc.
+   - **Clan**:
+     - `GET /GroupV2/{groupId}/`:
+       Fetch clan details.
+     - `GET /GroupV2/{groupId}/Members/`:
+       List clan members.
+   - **Inventory**:
+     - `GET /Destiny2/{membershipType}/Profile/{destinyMembershipId}/?components=200`:
+       Retrieve user inventory.
+
+3. **Rate Limits**:
+   - Implement retry logic to handle rate-limited requests:
+     ```javascript
+     const retryFetch = async (url, options, retries = 3) => {
+       try {
+         return await fetch(url, options);
+       } catch (err) {
+         if (retries > 0) {
+           return retryFetch(url, options, retries - 1);
+         }
+         throw err;
+       }
+     };
+     ```
+
+---
+
+### **5. AI Tools: OpenAI, Flowise, Ollama**
+#### Purpose
+- Provide personalized recommendations and contextual assistance.
+
+#### Features and Integration
+1. **OpenAI**:
+   - Use GPT models for loadout recommendations, raid strategies, and activity tips.
+   - Example query:
+     ```javascript
+     const response = await openai.createCompletion({
+       model: 'gpt-4',
+       prompt: 'Recommend a loadout for a raid using these items...',
+       maxTokens: 150,
+     });
+     ```
+
+2. **Flowise**:
+   - Integrate with LangChain for prompt pipelines and user-specific AI flows:
+     - Example: Fetch user inventory and pass it to an AI model for loadout optimization.
+
+3. **Ollama**:
+   - Host local models for cost-effective AI inference.
+   - Use a hybrid approach where OpenAI is the fallback for complex tasks.
+
+---
+
+### **6. Automation: n8n**
+#### Purpose
+- Automate workflows like syncing Bungie manifests and sending notifications.
+
+#### Features and Integration
+1. **Scheduled Tasks**:
+   - Sync Destiny 2 manifest daily:
+     - Trigger: Cron → Fetch manifest → Store in Supabase.
+2. **Notifications**:
+   - Use Discord webhooks to notify users of event updates.
+   - Example Workflow:
+     - Trigger: Event Created → Send Webhook → Notify Clan Members.
+
+#### Best Practices
+- Modularize workflows for maintainability.
+- Monitor execution logs to identify and fix issues.
+
+---
+### **Section: Syncing the Destiny 2 Manifest with Supabase**
+
+The **Destiny 2 Manifest** provides game metadata, including item definitions, activity details, and other game-related data. Syncing the manifest with your **Supabase database** is critical for providing accurate and comprehensive in-game data for your app. This section outlines the entire process.
+
+---
+
+### **Step-by-Step Plan for Syncing the Manifest**
+
+---
+
+#### **1. Understanding the Destiny 2 Manifest**
+
+- **Endpoint**: `GET /Destiny2/Manifest/`
+  - Provides metadata about the current manifest files, including their location and versions.
+
+- **Structure**:
+  - The manifest consists of various JSON files or a SQLite database, containing:
+    - Items (weapons, armor, mods, consumables)
+    - Activities (raids, strikes, quests)
+    - Vendors and more.
+
+- **Localization**:
+  - The manifest is available in multiple languages. Decide which language(s) to fetch for your app.
+
+---
+
+#### **2. Supabase Database Schema**
+
+1. **Create Tables for Key Manifest Data**
+   - Design schema to reflect the manifest’s structure:
+     ```sql
+     CREATE TABLE manifest_metadata (
+       id SERIAL PRIMARY KEY,
+       version TEXT NOT NULL,
+       json_path TEXT NOT NULL,
+       sqlite_path TEXT NOT NULL,
+       last_synced TIMESTAMP DEFAULT now()
+     );
+
+     CREATE TABLE items (
+       id BIGINT PRIMARY KEY,
+       name TEXT,
+       description TEXT,
+       type TEXT,
+       rarity TEXT,
+       icon TEXT,
+       data JSONB
+     );
+
+     CREATE TABLE activities (
+       id BIGINT PRIMARY KEY,
+       name TEXT,
+       description TEXT,
+       activity_type TEXT,
+       light_level_required INT,
+       data JSONB
+     );
+     ```
+
+2. **Indexing for Performance**:
+   - Add indexes on frequently queried fields, such as `id`, `name`, or `type`.
+
+---
+
+#### **3. Automation Workflow**
+
+Use **n8n** for scheduled automation to fetch and update the manifest daily.
+
+1. **Workflow in n8n**:
+   - **Trigger**: Set a Cron trigger to run every 24 hours.
+   - **HTTP Request**: Fetch manifest metadata:
+     - URL: `https://www.bungie.net/Platform/Destiny2/Manifest/`
+     - Headers: Include your Bungie API key.
+   - **Check Version**: Compare the new version with the existing version in Supabase.
+   - **Download Manifest**:
+     - If the version has changed, download the SQLite or JSON file(s) using the paths from the manifest metadata.
+   - **Process Data**:
+     - Parse SQLite or JSON files to extract relevant data.
+   - **Database Update**:
+     - Update tables with the latest data using Supabase’s API.
+
+---
+
+#### **4. Backend API Integration**
+
+Set up a **Supabase Edge Function** or a Next.js API route to sync the manifest on demand.
+
+1. **Edge Function Example**:
+   - **Purpose**: Trigger manifest sync via API call.
+
+   ```javascript
+   import { createClient } from '@supabase/supabase-js';
+   import axios from 'axios';
+
+   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+   export async function syncManifest() {
+     try {
+       // Fetch manifest metadata
+       const manifestRes = await axios.get('https://www.bungie.net/Platform/Destiny2/Manifest/', {
+         headers: { 'X-API-Key': BUNGIE_API_KEY },
+       });
+
+       const manifestData = manifestRes.data.Response;
+       const { version, jsonWorldComponentContentPaths } = manifestData;
+
+       // Check if already synced
+       const { data: existingManifest } = await supabase
+         .from('manifest_metadata')
+         .select('*')
+         .eq('version', version)
+         .single();
+
+       if (existingManifest) {
+         console.log('Manifest already up to date');
+         return;
+       }
+
+       // Download and process the JSON file
+       const itemsPath = jsonWorldComponentContentPaths.en.DestinyInventoryItemDefinition;
+       const itemsRes = await axios.get(`https://www.bungie.net${itemsPath}`);
+
+       const items = Object.entries(itemsRes.data).map(([id, item]) => ({
+         id,
+         name: item.displayProperties.name,
+         description: item.displayProperties.description,
+         type: item.itemTypeDisplayName,
+         rarity: item.inventory?.tierTypeName,
+         icon: item.displayProperties.icon,
+         data: item,
+       }));
+
+       // Update database
+       await supabase.from('items').upsert(items, { onConflict: 'id' });
+
+       // Update metadata
+       await supabase.from('manifest_metadata').insert({
+         version,
+         json_path: itemsPath,
+         last_synced: new Date(),
+       });
+
+       console.log('Manifest synced successfully');
+     } catch (error) {
+       console.error('Error syncing manifest:', error);
+     }
+   }
+   ```
+
+---
+
+#### **5. Parsing and Storing Data**
+
+- Use **SQLite** or **JSON** parsing libraries to extract required data.
+  - For SQLite: Use a Node.js library like `sqlite3` or `better-sqlite3` to parse and query data locally.
+  - For JSON: Load specific components directly into Supabase.
+
+- Filter irrelevant data to minimize database size:
+  - Example: Only store weapons, armor, and mods for loadout recommendations.
+
+---
+
+#### **6. Scheduling Updates**
+
+1. **n8n Cron Job**:
+   - Automate daily manifest sync.
+   - Trigger notification if there’s a version mismatch or sync failure.
+
+2. **Manual Sync Endpoint**:
+   - Provide an admin-only API route to force a sync if needed:
+     - Use cases: Manifest update, bug fixes, or user request.
+
+---
+
+#### **7. Frontend Integration**
+
+1. **Caching**:
+   - Cache manifest data in the client-side state for faster access.
+   - Example: Use React Query or SWR for data fetching and caching.
+
+2. **Dynamic Data Display**:
+   - Populate UI elements (e.g., tooltips, loadouts) with manifest data:
+     ```javascript
+     const { data: item } = useSWR(`/api/items/${itemId}`, fetcher);
+     ```
+
+3. **Search & Filter**:
+   - Implement search and filter functionality for items, activities, etc.
+   - Use Supabase’s full-text search capabilities.
+
+---
+
+### **Best Practices**
+
+1. **Error Handling**:
+   - Log and alert any failures during manifest sync.
+   - Retry on partial sync failures.
+
+2. **Database Optimization**:
+   - Regularly prune unused or outdated data.
+   - Partition large tables for performance.
+
+3. **Rate Limiting**:
+   - Bungie API imposes rate limits. Implement request batching to stay within limits.
+
+---
+
+This setup ensures your app has an up-to-date, searchable, and efficient manifest integration to power in-game features. Let me know if you'd like assistance refining specific parts or implementing the Edge Function or n8n workflow!
+
+/**
+ * Discord Integration Rules
+ * 
+ * These rules define how we handle Discord.js integration in our Next.js application.
+ */
+
+// 1. Server-Side Only Discord.js
+// Discord.js must only be used in:
+// - API Routes (app/api/*)
+// - Server Components (app/**/page.tsx, layout.tsx)
+// - Server Actions
+// - Edge Functions
+// Never import Discord.js in:
+// - Client Components ('use client')
+// - Browser-side code
+// - React hooks
+
+// 2. Directory Structure
+app/
+  └── api/
+      └── discord/           // All Discord-related API routes
+          ├── guilds/        // Guild operations
+          ├── members/       // Member operations
+          ├── roles/         // Role operations
+          └── webhooks/      // Webhook handlers
+
+// 3. Type Patterns
+// Use explicit interfaces for all Discord data:
+interface DiscordGuild {
+  id: string
+  name: string
+  icon: string | null
+  features: string[]
+  // Add only fields we actually use
+}
+
+// 4. API Response Format
+{
+  data?: T            // The response data
+  error?: {
+    code: string      // Error code
+    message: string   // User-friendly message
+  }
+}
+
+// 5. Error Handling
+try {
+  const result = await discordOperation()
+  return NextResponse.json({ data: result })
+} catch (error) {
+  console.error('Discord operation failed:', error)
+  return NextResponse.json({
+    error: {
+      code: 'DISCORD_ERROR',
+      message: 'Failed to perform Discord operation'
+    }
+  }, { status: 500 })
+}
+
+// 6. Client-Side Data Fetching
+// Use React Query/SWR for Discord data:
+const { data, error, isLoading } = useQuery(
+  ['discord', 'guilds'],
+  () => fetch('/api/discord/guilds').then(r => r.json())
+)
+
+// 7. Real-Time Updates
+// Use WebSocket or Server-Sent Events for real-time Discord events
+// Never connect to Discord Gateway from client-side
+
+// 8. Environment Variables
+DISCORD_CLIENT_ID=            // OAuth2 client ID
+DISCORD_CLIENT_SECRET=        // OAuth2 client secret
+DISCORD_BOT_TOKEN=           // Bot token for API operations
+DISCORD_WEBHOOK_SECRET=      // Webhook signing secret
+
+// 9. Security Rules
+- Store all Discord tokens server-side only
+- Validate all incoming webhook requests
+- Rate limit API routes appropriately
+- Use appropriate OAuth2 scopes only
+
+// 10. Testing Patterns
+// Unit Tests:
+describe('Discord API Routes', () => {
+  it('should handle guild fetch', async () => {
+    const response = await fetch('/api/discord/guilds')
+    expect(response.status).toBe(200)
+    const data = await response.json()
+    expect(data).toHaveProperty('guilds')
+  })
+})
+
+// 11. Documentation Requirements
+// All Discord-related code must include:
+- Purpose of the endpoint/component
+- Required permissions/scopes
+- Rate limit considerations
+- Error scenarios and handling
+- Example request/response
+
+// 12. Server vs Client Responsibilities
+
+// Server-Side (Discord.js Operations):
+- Direct Discord API interactions
+- Bot functionality
+- Webhook processing
+- Real-time event handling
+- Token management
+- Rate limit handling
+- Data caching
+- Error logging
+
+// Client-Side (React Components):
+- Data display
+- User interactions
+- Loading states
+- Error displays
+- Optimistic updates
+- Local state management
+- UI animations
+- Form handling
+
+// Example Pattern:
+// ❌ Wrong (Client-Side):
+const GuildList = () => {
+  const discord = new Discord.Client() // Never do this
+  const guilds = await discord.guilds.fetch()
+  return <div>{guilds.map(...)}</div>
+}
+
+// ✅ Correct (Client-Side):
+const GuildList = () => {
+  const { data: guilds } = useQuery('guilds', 
+    () => fetch('/api/discord/guilds').then(r => r.json())
+  )
+  return <div>{guilds?.map(...)}</div>
+}
+
+// ✅ Correct (Server-Side):
+// app/api/discord/guilds/route.ts
+export async function GET() {
+  const client = await getDiscordClient()
+  const guilds = await client.guilds.fetch()
+  return NextResponse.json({ data: guilds })
+}
+
+// 13. State Management
+// Server State:
+- Discord connection status
+- Rate limit tracking
+- Cache invalidation
+- Event subscriptions
+
+// Client State:
+- UI interactions
+- Form data
+- Filter/sort preferences
+- Pagination state
+
+// 14. Performance Guidelines
+// Server-Side:
+- Cache Discord API responses
+- Batch Discord API requests
+- Handle rate limits gracefully
+- Use appropriate intents only
+
+// Client-Side:
+- Implement request deduplication
+- Use optimistic updates
+- Handle loading states
+- Implement error boundaries
+
+## **Project Structure**
+
+```
+ghost-mnky/
+├── app/                    # Next.js app directory
+│   ├── (auth-pages)/      # Authentication related pages
+│   ├── api/               # API routes
+│   │   └── discord/       # Discord integration endpoints
+│   └── protected/         # Protected routes requiring auth
+├── components/            # React components
+│   ├── auth/             # Authentication components
+│   ├── hooks/            # Custom React hooks
+│   ├── lib/              # Component utilities
+│   ├── ui/               # UI components
+│   └── typography/       # Typography components
+├── hooks/                # Global hooks
+├── lib/                  # Core utilities
+├── public/              # Static assets
+│   ├── audio/           # Audio files
+│   └── images/          # Image assets
+├── supabase/            # Supabase configuration
+│   ├── functions/       # Edge functions
+│   └── migrations/      # Database migrations
+└── utils/               # Utility functions
+    └── supabase/        # Supabase utilities
+```
+
+### **Key Directories**
+
+1. **`app/`**: Next.js App Router pages and API routes
+   - `(auth-pages)/`: Authentication flow pages
+   - `api/`: Backend API endpoints
+   - `protected/`: Routes requiring authentication
+
+2. **`components/`**: Reusable React components
+   - `auth/`: Authentication-related components
+   - `hooks/`: Component-specific hooks
+   - `ui/`: Shadcn UI components
+   - `typography/`: Text and heading components
+
+3. **`supabase/`**: Database and backend configuration
+   - `functions/`: Serverless edge functions
+   - `migrations/`: Database schema and changes
+
+4. **`utils/`**: Helper functions and utilities
+   - `supabase/`: Supabase client configuration
+
+### **File Naming Conventions**
+- React components: PascalCase (e.g., `DiscordAuthButton.tsx`)
+- Utilities and hooks: camelCase (e.g., `useIsMobile.ts`)
+- Pages: kebab-case (e.g., `sign-in.tsx`)
+- Database migrations: timestamp_description (e.g., `20240106000000_enable_extensions.sql`)
