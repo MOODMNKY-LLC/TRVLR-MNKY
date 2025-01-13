@@ -2,10 +2,8 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { ThemeSwitcher } from "@/components/theme-switcher"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 import { ProfileMenu } from "./profile-menu"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { 
@@ -34,17 +32,20 @@ import {
   Webhook,
   Sliders,
   Rocket,
-  Menu,
-  ChevronRight
+  ChevronRight,
+  Gamepad,
+  Key,
+  Lock
 } from "lucide-react"
 import Link from 'next/link'
 import Image from 'next/image'
+import { type LucideIcon } from "lucide-react"
 
 // Type Definitions
 interface NavItemBase {
-  icon: React.ElementType
   label: string
-  description: string
+  icon: LucideIcon
+  description?: string
 }
 
 interface SimpleNavItem extends NavItemBase {
@@ -60,28 +61,30 @@ type NavItem = SimpleNavItem | CollapsibleNavItem
 
 interface NavGroup {
   label: string
+  icon: LucideIcon
   href: string
   description: string
   items: NavItem[]
 }
 
+interface NavItemProps extends SimpleNavItem {
+  isCollapsed: boolean
+}
+
+function isCollapsibleNavItem(item: NavItem): item is CollapsibleNavItem {
+  return 'collapsible' in item && item.collapsible === true
+}
+
 interface SidebarProps {
-  children?: React.ReactNode
   user?: any
   className?: string
   isCollapsed?: boolean
-  onCollapse?: () => void
 }
 
-interface SidebarHeaderProps {
-  isCollapsed: boolean
-  setIsCollapsed: (collapsed: boolean) => void
-}
-
-function SidebarHeader({ isCollapsed, setIsCollapsed }: SidebarHeaderProps) {
+function SidebarHeader({ isCollapsed }: { isCollapsed: boolean }) {
   return (
     <div className={cn(
-      "sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 transition-all duration-300",
+      "sticky top-0 z-30 flex h-16 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 transition-all duration-300",
       isCollapsed ? "px-2" : "px-4"
     )}>
       <Link href="/" className="flex items-center gap-2 transition-opacity duration-300">
@@ -101,18 +104,6 @@ function SidebarHeader({ isCollapsed, setIsCollapsed }: SidebarHeaderProps) {
           </span>
         )}
       </Link>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="h-9 w-9 transition-transform duration-300"
-      >
-        <Menu className={cn(
-          "h-4 w-4 transition-transform duration-300",
-          isCollapsed ? "rotate-180" : "rotate-0"
-        )} />
-        <span className="sr-only">Toggle sidebar</span>
-      </Button>
     </div>
   )
 }
@@ -121,16 +112,23 @@ function SidebarHeader({ isCollapsed, setIsCollapsed }: SidebarHeaderProps) {
 const navGroups: NavGroup[] = [
   {
     label: "Overview",
+    icon: Home,
     href: "/protected",
     description: "Dashboard and overview",
     items: [
-      { icon: Home, label: "Dashboard", href: "/protected", description: "App overview and status" },
+      {
+        icon: Home,
+        label: "Dashboard",
+        href: "/protected",
+        description: "View your dashboard"
+      }
     ]
   },
   {
     label: "Community",
+    icon: Users,
     href: "/protected/community",
-    description: "Connect with your clan",
+    description: "Manage community features",
     items: [
       { icon: MessageSquare, label: "Chat", href: "/protected/community/chat", description: "Chat with your clan" },
       { icon: Rocket, label: "LFG", href: "/protected/community/lfg", description: "Find a fireteam" },
@@ -150,8 +148,9 @@ const navGroups: NavGroup[] = [
   },
   {
     label: "Fireteam",
+    icon: Gamepad,
     href: "/protected/fireteam",
-    description: "Manage your guardians",
+    description: "Manage your fireteam",
     items: [
       {
         icon: Users,
@@ -179,8 +178,9 @@ const navGroups: NavGroup[] = [
   },
   {
     label: "Resources",
+    icon: Database,
     href: "/protected/resources",
-    description: "Game data and builds",
+    description: "Access game resources",
     items: [
       {
         icon: Brain,
@@ -219,171 +219,260 @@ const navGroups: NavGroup[] = [
   },
   {
     label: "Settings",
+    icon: Settings,
     href: "/protected/settings",
-    description: "App settings",
+    description: "Manage app settings",
     items: [
       {
         icon: Plug,
-        label: "Integrations",
-        description: "Manage connections",
+        label: "Personal Settings",
+        description: "Manage your account and preferences",
         collapsible: true,
         items: [
-          { icon: MessageSquare, label: "Discord", href: "/protected/settings/integrations/discord", description: "Manage Discord integration" },
-          { icon: Rocket, label: "Bungie.net", href: "/protected/settings/integrations/bungie", description: "Configure Bungie.net API access" },
-          { icon: Shield, label: "DIM", href: "/protected/settings/integrations/dim", description: "Set up DIM sync" },
+          { 
+            icon: Shield, 
+            label: "Account", 
+            href: "/protected/settings/account", 
+            description: "Manage your account settings and profile" 
+          },
+          { 
+            icon: Bell, 
+            label: "Notifications", 
+            href: "/protected/settings/notifications", 
+            description: "Configure notification preferences" 
+          },
+          { 
+            icon: Sliders, 
+            label: "Appearance", 
+            href: "/protected/settings/appearance", 
+            description: "Customize app theme and layout" 
+          }
+        ]
+      },
+      {
+        icon: Plug,
+        label: "Integrations",
+        description: "Manage external connections",
+        collapsible: true,
+        items: [
+          { 
+            icon: MessageSquare, 
+            label: "Discord", 
+            href: "/protected/settings/integrations/discord", 
+            description: "Configure Discord bot, webhooks, and server sync" 
+          },
+          { 
+            icon: Rocket, 
+            label: "Bungie.net", 
+            href: "/protected/settings/integrations/bungie", 
+            description: "Link Destiny 2 account and configure API access" 
+          },
+          { 
+            icon: Shield, 
+            label: "DIM", 
+            href: "/protected/settings/integrations/dim", 
+            description: "Set up DIM sync for inventory management" 
+          }
+        ]
+      },
+      {
+        icon: Users,
+        label: "Clan Settings",
+        collapsible: true,
+        description: "Manage clan configuration",
+        items: [
+          { 
+            icon: Shield, 
+            label: "General", 
+            href: "/protected/settings/clan/general", 
+            description: "Basic clan settings and information" 
+          },
+          { 
+            icon: Webhook, 
+            label: "Integrations", 
+            href: "/protected/settings/clan/integrations", 
+            description: "Configure clan-wide Discord bot and webhooks" 
+          },
+          { 
+            icon: Bot, 
+            label: "Automation", 
+            href: "/protected/settings/clan/automation", 
+            description: "Set up clan activity automation and notifications" 
+          }
         ]
       },
       {
         icon: Bot,
-        label: "AI & Automation",
+        label: "AI Assistant",
         collapsible: true,
         description: "Configure AI features",
         items: [
-          { icon: Bot, label: "AI Settings", href: "/protected/settings/ai", description: "Customize AI behavior" },
-          { icon: Webhook, label: "Webhooks", href: "/protected/settings/webhooks", description: "Manage automation webhooks" },
-          { icon: Sliders, label: "Preferences", href: "/protected/settings/ai/preferences", description: "Set AI preferences" },
+          { 
+            icon: Brain, 
+            label: "Preferences", 
+            href: "/protected/settings/ai/preferences", 
+            description: "Customize AI behavior and responses" 
+          },
+          { 
+            icon: Wand2, 
+            label: "Loadout Analysis", 
+            href: "/protected/settings/ai/loadout", 
+            description: "Configure AI loadout recommendations" 
+          },
+          { 
+            icon: Star, 
+            label: "Activity Insights", 
+            href: "/protected/settings/ai/insights", 
+            description: "Manage AI-powered activity suggestions" 
+          }
         ]
       },
       {
-        icon: Settings,
-        label: "App Settings",
+        icon: Shield,
+        label: "Security",
         collapsible: true,
-        description: "Customize app",
+        description: "Manage security settings",
         items: [
-          { icon: Bell, label: "Notifications", href: "/protected/settings/notifications", description: "Manage notifications" },
-          { icon: Shield, label: "Security", href: "/protected/settings/security", description: "Security settings" },
-          { icon: Sliders, label: "Preferences", href: "/protected/settings/preferences", description: "App preferences" },
+          { 
+            icon: Shield, 
+            label: "Authentication", 
+            href: "/protected/settings/security/auth", 
+            description: "Configure 2FA and security options" 
+          },
+          { 
+            icon: Key, 
+            label: "API Keys", 
+            href: "/protected/settings/security/api-keys", 
+            description: "Manage API keys and access tokens" 
+          },
+          { 
+            icon: Lock, 
+            label: "Permissions", 
+            href: "/protected/settings/security/permissions", 
+            description: "Configure app and integration permissions" 
+          }
         ]
       }
     ]
   }
 ]
 
-export function Sidebar({ user, className }: SidebarProps) {
-  const [isCollapsed, setIsCollapsed] = React.useState(false)
-  const [openGroups, setOpenGroups] = React.useState<string[]>([])
-
-  const toggleGroup = (groupLabel: string) => {
-    setOpenGroups(prev => 
-      prev.includes(groupLabel) 
-        ? prev.filter(g => g !== groupLabel)
-        : [...prev, groupLabel]
-    )
-  }
-
-  const isCollapsibleNavItem = (item: NavItem): item is CollapsibleNavItem => {
-    return 'collapsible' in item
-  }
+function NavGroup({ group, isCollapsed }: { group: NavGroup; isCollapsed: boolean }) {
+  const [isOpen, setIsOpen] = React.useState(false)
 
   return (
-    <nav className={cn(
-      "relative flex flex-col h-screen border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300",
-      isCollapsed ? "w-[70px]" : "w-[240px]",
-      className
-    )}>
-      <SidebarHeader isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
-      
-      <ScrollArea className="flex-1 py-2">
-        <div className="space-y-2 py-2">
-          {navGroups.map((group, index) => (
-            <div key={group.label} className="space-y-4">
-              <div className="px-2">
-                <Link 
-                  href={group.href}
-                  className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {group.label}
-                </Link>
-              </div>
-              <div className="pl-1 space-y-1">
-                {group.items.map((item) => (
-                  isCollapsibleNavItem(item) ? (
-                    <CollapsibleNavItem 
-                      key={item.label}
-                      item={item}
-                      isCollapsed={isCollapsed}
-                      isOpen={openGroups.includes(item.label)}
-                      onToggle={() => toggleGroup(item.label)}
-                    />
-                  ) : (
-                    <NavItem key={item.href} {...item} />
-                  )
-                ))}
-              </div>
-            </div>
-          ))}
+    <div className="px-2">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <div className="flex items-center gap-1">
+          <Link 
+            href={group.href}
+            className={cn(
+              "flex flex-1 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent transition-colors",
+              isOpen && "bg-accent"
+            )}
+          >
+            <group.icon className="h-4 w-4" />
+            {!isCollapsed && (
+              <span>{group.label}</span>
+            )}
+          </Link>
+          {!isCollapsed && (
+            <CollapsibleTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn(
+                  "h-8 w-8 p-0 hover:bg-accent",
+                  isOpen && "bg-accent"
+                )}
+              >
+                <ChevronRight 
+                  className={cn(
+                    "h-4 w-4 transition-transform",
+                    isOpen && "rotate-90"
+                  )} 
+                />
+                <span className="sr-only">Toggle {group.label} menu</span>
+              </Button>
+            </CollapsibleTrigger>
+          )}
         </div>
-      </ScrollArea>
-
-      <div className={cn(
-        "sticky bottom-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 transition-all duration-300",
-        isCollapsed ? "px-2" : "px-4"
-      )}>
-        <ProfileMenu user={user} isCollapsed={isCollapsed} />
-      </div>
-    </nav>
+        
+        {!isCollapsed && (
+          <CollapsibleContent className="space-y-1 px-3 py-2">
+            {group.items.map((item) => (
+              isCollapsibleNavItem(item) ? (
+                <SubNavGroup 
+                  key={item.label} 
+                  item={item} 
+                  isCollapsed={isCollapsed} 
+                />
+              ) : (
+                <NavItem 
+                  key={item.href} 
+                  {...item} 
+                  isCollapsed={isCollapsed} 
+                />
+              )
+            ))}
+          </CollapsibleContent>
+        )}
+      </Collapsible>
+    </div>
   )
 }
 
-interface NavItemProps extends SimpleNavItem {
-  isCollapsed?: boolean
-}
-
-interface CollapsibleNavItemProps {
-  item: CollapsibleNavItem
-  isCollapsed?: boolean
-  isOpen: boolean
-  onToggle: () => void
-}
-
-function CollapsibleNavItem({ item, isCollapsed, isOpen, onToggle }: CollapsibleNavItemProps) {
-  const Icon = item.icon
+function SubNavGroup({ item, isCollapsed }: { item: CollapsibleNavItem; isCollapsed: boolean }) {
+  const [isOpen, setIsOpen] = React.useState(false)
 
   if (isCollapsed) {
     return (
-      <Button
-        variant="ghost"
-        className="w-full justify-start px-2 h-10"
-        asChild
-      >
-        <div className="group relative flex items-center">
-          <Icon className="h-4 w-4" />
-          <div className="absolute left-full ml-2 hidden rounded-md bg-popover px-2 py-1 text-xs group-hover:block shadow-md">
+      <div className="group relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start"
+        >
+          <item.icon className="h-4 w-4" />
+          <div className="absolute left-full top-0 ml-2 hidden rounded-md bg-popover px-2 py-1 text-sm group-hover:block">
             <p className="font-medium">{item.label}</p>
-            {item.items.map((subItem: any) => (
-              <p key={subItem.label} className="text-muted-foreground">{subItem.label}</p>
+            {item.items.map((subItem) => (
+              <p key={subItem.href} className="text-muted-foreground">{subItem.label}</p>
             ))}
           </div>
-        </div>
-      </Button>
+        </Button>
+      </div>
     )
   }
 
   return (
-    <Collapsible open={isOpen} onOpenChange={onToggle}>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <CollapsibleTrigger asChild>
         <Button
           variant="ghost"
-          className="w-full justify-between px-2 py-1 text-sm hover:bg-accent"
+          size="sm"
+          className={cn(
+            "w-full justify-between px-2 py-1 text-sm hover:bg-accent",
+            isOpen && "bg-accent"
+          )}
         >
           <div className="flex items-center gap-2">
-            <Icon className="h-4 w-4" />
+            <item.icon className="h-4 w-4" />
             <span>{item.label}</span>
           </div>
-          <ChevronRight className={cn(
-            "h-4 w-4 transition-transform",
-            isOpen && "rotate-90"
-          )} />
+          <ChevronRight 
+            className={cn(
+              "h-4 w-4 transition-transform",
+              isOpen && "rotate-90"
+            )} 
+          />
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-1 px-2">
-        {item.items.map((subItem: any) => (
+        {item.items.map((subItem) => (
           <NavItem
             key={subItem.href}
-            icon={subItem.icon}
-            label={subItem.label}
-            href={subItem.href}
-            description={subItem.description}
+            {...subItem}
             isCollapsed={false}
           />
         ))}
@@ -396,22 +485,54 @@ function NavItem({ icon: Icon, label, href, description, isCollapsed }: NavItemP
   return (
     <Button
       variant="ghost"
+      size="sm"
       className={cn(
         "w-full justify-start hover:bg-accent",
-        isCollapsed ? "h-10 px-2" : "px-2 py-1 text-sm"
+        isCollapsed ? "px-2" : "px-2 py-1 text-sm"
       )}
       asChild
     >
-      <a href={href} className="group relative flex items-center gap-2">
+      <Link href={href} className="group relative flex items-center gap-2">
         <Icon className="h-4 w-4" />
         {!isCollapsed && <span>{label}</span>}
         {isCollapsed && description && (
-          <div className="absolute left-full ml-2 hidden rounded-md bg-popover px-2 py-1 text-xs group-hover:block shadow-md">
+          <div className="absolute left-full top-0 ml-2 hidden rounded-md bg-popover px-2 py-1 text-sm group-hover:block">
             <p className="font-medium">{label}</p>
             <p className="text-muted-foreground">{description}</p>
           </div>
         )}
-      </a>
+      </Link>
     </Button>
+  )
+}
+
+export function Sidebar({ user, className, isCollapsed = false }: SidebarProps) {
+  return (
+    <nav className={cn(
+      "relative flex flex-col h-screen border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300",
+      isCollapsed ? "w-[70px]" : "w-[240px]",
+      className
+    )}>
+      <SidebarHeader isCollapsed={isCollapsed} />
+      
+      <ScrollArea className="flex-1 py-2">
+        <div className="space-y-2">
+          {navGroups.map((group) => (
+            <NavGroup 
+              key={group.label} 
+              group={group} 
+              isCollapsed={isCollapsed} 
+            />
+          ))}
+        </div>
+      </ScrollArea>
+
+      <div className={cn(
+        "sticky bottom-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 transition-all duration-300",
+        isCollapsed ? "px-2" : "px-4"
+      )}>
+        <ProfileMenu user={user} isCollapsed={isCollapsed} />
+      </div>
+    </nav>
   )
 } 

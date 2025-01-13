@@ -1,91 +1,166 @@
-import { Separator } from "@/components/ui/separator"
+'use client'
+
 import { Card } from "@/components/ui/card"
-import Link from "next/link"
 import { 
-  Settings,
-  Plug,
-  Bot,
-  Bell,
-  Shield,
+  Shield, 
+  MessageSquare, 
+  Rocket, 
+  Bot, 
+  Users, 
+  Bell, 
+  Sliders,
   Webhook,
-  MessageSquare,
-  Rocket,
-  Sliders
+  Brain,
+  Lock,
+  Key
 } from "lucide-react"
+import Link from "next/link"
 
-export default function SettingsPage() {
-  const sections = [
-    {
-      title: "Integrations",
-      description: "Manage connected services and APIs",
-      icon: Plug,
-      items: [
-        { icon: MessageSquare, label: "Discord", href: "/protected/settings/integrations/discord", description: "Manage Discord integration" },
-        { icon: Rocket, label: "Bungie.net", href: "/protected/settings/integrations/bungie", description: "Configure Bungie.net API access" },
-        { icon: Shield, label: "DIM", href: "/protected/settings/integrations/dim", description: "Set up DIM sync" },
-      ]
-    },
-    {
-      title: "AI & Automation",
-      description: "Configure AI features and automation",
-      icon: Bot,
-      items: [
-        { icon: Bot, label: "AI Settings", href: "/protected/settings/ai", description: "Customize AI behavior" },
-        { icon: Webhook, label: "Webhooks", href: "/protected/settings/webhooks", description: "Manage automation webhooks" },
-        { icon: Sliders, label: "Preferences", href: "/protected/settings/ai/preferences", description: "Set AI preferences" },
-      ]
-    },
-    {
-      title: "App Settings",
-      description: "Customize your app experience",
-      icon: Settings,
-      items: [
-        { icon: Bell, label: "Notifications", href: "/protected/settings/notifications", description: "Manage notifications" },
-        { icon: Shield, label: "Security", href: "/protected/settings/security", description: "Security settings" },
-        { icon: Sliders, label: "Preferences", href: "/protected/settings/preferences", description: "App preferences" },
-      ]
-    }
-  ]
+interface SettingCategory {
+  title: string
+  description: string
+  icon: React.ElementType
+  href: string
+}
 
+const personalSettings: SettingCategory[] = [
+  {
+    title: "Account",
+    description: "Manage your account settings and profile",
+    icon: Shield,
+    href: "/protected/settings/account"
+  },
+  {
+    title: "Notifications",
+    description: "Configure notification preferences",
+    icon: Bell,
+    href: "/protected/settings/notifications"
+  },
+  {
+    title: "Appearance",
+    description: "Customize app theme and layout",
+    icon: Sliders,
+    href: "/protected/settings/appearance"
+  }
+]
+
+const integrationSettings: SettingCategory[] = [
+  {
+    title: "Discord",
+    description: "Configure Discord bot, webhooks, and server sync",
+    icon: MessageSquare,
+    href: "/protected/settings/integrations/discord"
+  },
+  {
+    title: "Bungie.net",
+    description: "Link Destiny 2 account and configure API access",
+    icon: Rocket,
+    href: "/protected/settings/integrations/bungie"
+  },
+  {
+    title: "DIM",
+    description: "Set up DIM sync for inventory management",
+    icon: Shield,
+    href: "/protected/settings/integrations/dim"
+  }
+]
+
+const clanSettings: SettingCategory[] = [
+  {
+    title: "General",
+    description: "Basic clan settings and information",
+    icon: Users,
+    href: "/protected/settings/clan/general"
+  },
+  {
+    title: "Integrations",
+    description: "Configure clan-wide Discord bot and webhooks",
+    icon: Webhook,
+    href: "/protected/settings/clan/integrations"
+  },
+  {
+    title: "Automation",
+    description: "Set up clan activity automation and notifications",
+    icon: Bot,
+    href: "/protected/settings/clan/automation"
+  }
+]
+
+const aiSettings: SettingCategory[] = [
+  {
+    title: "AI Preferences",
+    description: "Customize AI behavior and responses",
+    icon: Brain,
+    href: "/protected/settings/ai/preferences"
+  },
+  {
+    title: "Loadout Analysis",
+    description: "Configure AI loadout recommendations",
+    icon: Bot,
+    href: "/protected/settings/ai/loadout"
+  },
+  {
+    title: "Activity Insights",
+    description: "Manage AI-powered activity suggestions",
+    icon: Brain,
+    href: "/protected/settings/ai/insights"
+  }
+]
+
+const securitySettings: SettingCategory[] = [
+  {
+    title: "Authentication",
+    description: "Configure 2FA and security options",
+    icon: Shield,
+    href: "/protected/settings/security/auth"
+  },
+  {
+    title: "API Keys",
+    description: "Manage API keys and access tokens",
+    icon: Key,
+    href: "/protected/settings/security/api-keys"
+  },
+  {
+    title: "Permissions",
+    description: "Configure app and integration permissions",
+    icon: Lock,
+    href: "/protected/settings/security/permissions"
+  }
+]
+
+function SettingSection({ title, categories }: { title: string, categories: SettingCategory[] }) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight">Settings Hub</h2>
-        <p className="text-sm text-muted-foreground">
-          Manage your app settings and integrations
-        </p>
-      </div>
-      <Separator className="my-4" />
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">{title}</h3>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {sections.map((section) => (
-          <div key={section.title} className="space-y-4">
-            <div className="flex items-center gap-2">
-              <section.icon className="h-5 w-5" />
-              <h3 className="font-semibold tracking-tight">{section.title}</h3>
-            </div>
-            <div className="grid gap-2">
-              {section.items.map((item) => (
-                <Card key={item.href} className="group relative overflow-hidden">
-                  <Link href={item.href} className="block p-6">
-                    <div className="flex items-center gap-2">
-                      <item.icon className="h-4 w-4" />
-                      <div>
-                        <h4 className="font-medium leading-none group-hover:text-primary">
-                          {item.label}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {item.description}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                  <span className="absolute inset-0 scale-0 opacity-0 bg-primary/5 transition-all group-hover:scale-100 group-hover:opacity-100" />
-                </Card>
-              ))}
-            </div>
-          </div>
+        {categories.map((category) => (
+          <Link key={category.href} href={category.href}>
+            <Card className="p-6 hover:bg-accent transition-colors cursor-pointer">
+              <div className="flex items-center space-x-4">
+                <category.icon className="h-6 w-6" />
+                <div className="space-y-1">
+                  <h4 className="text-sm font-medium">{category.title}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {category.description}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </Link>
         ))}
       </div>
+    </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <div className="space-y-8">
+      <SettingSection title="Personal Settings" categories={personalSettings} />
+      <SettingSection title="Integrations" categories={integrationSettings} />
+      <SettingSection title="Clan Settings" categories={clanSettings} />
+      <SettingSection title="AI Assistant" categories={aiSettings} />
+      <SettingSection title="Security" categories={securitySettings} />
     </div>
   )
 } 

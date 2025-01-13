@@ -1,0 +1,7 @@
+{
+  "name": "refresh_bungie_tokens",
+  "schedule": "*/15 * * * *",
+  "function": "refresh-bungie-tokens",
+  "enabled": true,
+  "description": "Checks for and refreshes Bungie.net tokens that are about to expire"
+} 
