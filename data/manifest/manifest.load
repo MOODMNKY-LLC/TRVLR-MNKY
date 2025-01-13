@@ -1,0 +1,21 @@
+
+      LOAD DATABASE
+        FROM sqlite:///data\manifest\230165.24.12.11.2000-1-bnet.57857.sqlite
+        INTO postgresql://postgres:postgres@host.docker.internal:54322/postgres
+
+      WITH include drop, create tables, create indexes, reset sequences
+
+      CAST type varchar to text,
+           type integer to bigint,
+           type datetime to timestamptz
+
+      SET maintenance_work_mem to '1024MB',
+          work_mem to '128MB'
+
+      BEFORE LOAD DO
+        $$ DROP SCHEMA IF EXISTS manifest_230165_24_12_11_2000_1_bnet_57857 CASCADE; $$,
+        $$ CREATE SCHEMA manifest_230165_24_12_11_2000_1_bnet_57857; $$
+
+      AFTER LOAD DO
+        $$ ALTER SCHEMA manifest_230165_24_12_11_2000_1_bnet_57857 RENAME TO manifest_current; $$;
+    
