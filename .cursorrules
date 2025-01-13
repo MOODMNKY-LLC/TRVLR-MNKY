@@ -209,6 +209,33 @@ Below is a comprehensive development roadmap outlining milestones, tasks, and be
 
 ---
 
+## **TRVLR App Workflow & Feature Set**
+
+### **User Registration and Authentication**
+- **Discord Authentication**: Users register by authenticating with Discord, leveraging its cross-platform capabilities and community features.
+- **Profile Storage**: Upon successful authentication, Discord profiles are stored comprehensively in the Supabase database.
+
+### **Welcome Dashboard**
+- **User Onboarding**: Users are routed to a welcome dashboard featuring a user profile card displaying Discord details.
+- **Hero Section**: The dashboard includes a hero section with descriptions and linked buttons for navigation.
+
+### **Profile Card Features**
+- **User Information**: Displays user information and verification statuses for app integrations.
+- **Bungie.net Integration**: Allows linking of Bungie.net profiles and access to Destiny Item Manager (DIM) information via DIM-sync or DIM-API.
+
+### **Data Storage and Caching**
+- **Supabase Integration**: All user data, including Bungie.net and DIM information, is stored and cached in Supabase.
+- **Integration Foundation**: This data serves as the foundation for Bungie.net and Destiny 2 integration.
+
+### **Virtual Assistant Integration**
+- **Flowise AI**: The virtual assistant, powered by Flowise, accesses user profiles and synced data.
+- **Personalized Assistance**: Utilizes Bungie.net API, DIM-sync, and Discord data for personalized assistance.
+
+### **Comprehensive User Experience**
+- **Seamless Integration**: The app aims to provide a seamless and interactive experience, integrating various gaming and community features.
+
+---
+
 ## **Conclusion**
 
 This roadmap provides a structured plan to develop and refine a Destiny 2 clan management platform using Next.js, Supabase, Shadcn, Tailwind, TypeScript, n8n, OpenAI, Flowise, and Ollama. Each phase builds on the previous, ensuring the core functionality is solid before introducing advanced features like AI-driven loadouts and local language models. By following these steps—planning carefully, adhering to best practices, and iterating based on user feedback—you’ll be well on your way to delivering a robust, feature-rich community hub for Destiny 2 clans.
@@ -591,6 +618,7 @@ Below is the **breakdown of each section of the tech stack** in a format similar
 - Monitor execution logs to identify and fix issues.
 
 ---
+
 ### **Section: Syncing the Destiny 2 Manifest with Supabase**
 
 The **Destiny 2 Manifest** provides game metadata, including item definitions, activity details, and other game-related data. Syncing the manifest with your **Supabase database** is critical for providing accurate and comprehensive in-game data for your app. This section outlines the entire process.
@@ -1025,3 +1053,303 @@ ghost-mnky/
 - Utilities and hooks: camelCase (e.g., `useIsMobile.ts`)
 - Pages: kebab-case (e.g., `sign-in.tsx`)
 - Database migrations: timestamp_description (e.g., `20240106000000_enable_extensions.sql`)
+```
+
+/**
+ * TRVLR App Development & Planning
+ * ===============================
+ * 
+ * Architecture Overview
+ * --------------------
+ * - Next.js App with Server Components
+ * - Supabase Backend (Auth & Database)
+ * - Discord OAuth Provider & API Integration
+ * - Bungie.net API Integration with DIM Sync
+ * - Flowise AI Integration (LangChain)
+ * 
+ * Core Integrations
+ * ----------------
+ * 1. Discord Integration:
+ *    - OAuth2 Authentication with scopes:
+ *      - identify: Basic user info
+ *      - guilds: Server access
+ *      - guilds.members.read: Member details
+ *    - Profile data storage in discord_profiles table
+ *    - Real-time server/guild management
+ *    - Role synchronization
+ * 
+ * 2. Bungie.net Integration:
+ *    - OAuth2 Authentication with scopes:
+ *      - ReadBasicUserProfile
+ *      - ReadGroups, WriteGroups, AdminGroups
+ *      - ReadDestinyInventoryAndVault
+ *    - Manifest management with caching
+ *    - Character & inventory management
+ *    - DIM Sync integration for loadouts
+ * 
+ * 3. AI Integration:
+ *    - Flowise AI powered by LangChain
+ *    - Virtual assistant for clan management
+ *    - Interactive UI/UX enhancements
+ *    - Natural language processing for commands
+ * 
+ * Database Schema
+ * --------------
+ * 1. User Profiles:
+ *    - discord_profiles: Discord user data
+ *    - bungie_profiles: Bungie.net user data
+ *    - user_settings: App preferences
+ * 
+ * 2. Clan Management:
+ *    - clans: Basic clan info
+ *    - clan_members: Member relationships
+ *    - clan_roles: Custom role definitions
+ *    - clan_events: Scheduled activities
+ * 
+ * 3. Game Integration:
+ *    - character_data: Destiny 2 characters
+ *    - inventory_cache: Item management
+ *    - loadouts: DIM sync data
+ * 
+ * Security Rules
+ * -------------
+ * 1. Authentication:
+ *    - Discord OAuth as primary auth
+ *    - Secure token storage
+ *    - Role-based access control
+ * 
+ * 2. Data Access:
+ *    - Row-level security in Supabase
+ *    - API key management
+ *    - Rate limiting implementation
+ * 
+ * Development Guidelines
+ * --------------------
+ * 1. Code Organization:
+ *    - Feature-based directory structure
+ *    - Shared components in @/components
+ *    - API routes in app/api/*
+ * 
+ * 2. State Management:
+ *    - Server components for data fetching
+ *    - Client components for interactivity
+ *    - Supabase real-time subscriptions
+ * 
+ * 3. Error Handling:
+ *    - Typed error responses
+ *    - Graceful fallbacks
+ *    - User-friendly error messages
+ * 
+ * 4. Performance:
+ *    - Manifest caching
+ *    - Image optimization
+ *    - Bundle size management
+ * 
+ * Feature Implementation
+ * --------------------
+ * 1. Clan Management:
+ *    - Member roster with roles
+ *    - Event scheduling
+ *    - Role management
+ *    - Activity tracking
+ * 
+ * 2. Game Integration:
+ *    - Character viewing
+ *    - Inventory management
+ *    - Loadout syncing
+ *    - Stats tracking
+ * 
+ * 3. Social Features:
+ *    - Chat integration
+ *    - Event RSVP
+ *    - Member activity feed
+ *    - Notifications
+ * 
+ * 4. AI Assistant:
+ *    - Natural language commands
+ *    - Automated responses
+ *    - Event suggestions
+ *    - Help documentation
+ * 
+ * Testing Strategy
+ * --------------
+ * 1. Unit Tests:
+ *    - Component testing
+ *    - API route testing
+ *    - Utility function testing
+ * 
+ * 2. Integration Tests:
+ *    - API integration testing
+ *    - Auth flow testing
+ *    - Database operations
+ * 
+ * 3. E2E Tests:
+ *    - User flows
+ *    - Critical paths
+ *    - Cross-browser testing
+ * 
+ * Deployment
+ * ---------
+ * 1. Environment Setup:
+ *    - Development
+ *    - Staging
+ *    - Production
+ * 
+ * 2. CI/CD:
+ *    - Automated testing
+ *    - Build optimization
+ *    - Deployment automation
+ * 
+ * 3. Monitoring:
+ *    - Error tracking
+ *    - Performance monitoring
+ *    - Usage analytics
+ */
+
+## **Database Schema & Migrations**
+
+### **Migration Naming Convention**
+```sql
+YYYYMMDDHHMMSS_descriptive_name.sql
+```
+Example: `20240112000007_enhance_discord_profile_storage.sql`
+
+### **Core Tables**
+
+1. **Discord Profiles**
+```sql
+CREATE TABLE discord_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
+  discord_id TEXT UNIQUE,
+  username TEXT,
+  global_name TEXT,
+  email TEXT,
+  avatar_url TEXT,
+  banner_url TEXT,
+  accent_color INTEGER,
+  locale TEXT,
+  verified BOOLEAN,
+  mfa_enabled BOOLEAN,
+  premium_type INTEGER,
+  raw_user_meta_data JSONB,
+  custom_claims JSONB,
+  discord_data JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+```
+
+2. **Public Profiles**
+```sql
+CREATE TABLE profiles (
+  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  discord_id TEXT UNIQUE,
+  name TEXT,
+  email TEXT,
+  email_verified BOOLEAN DEFAULT false,
+  picture TEXT,
+  avatar_url TEXT,
+  full_name TEXT,
+  provider_id TEXT,
+  global_name TEXT,
+  raw_metadata JSONB,
+  last_seen TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+```
+
+### **Migration Best Practices**
+
+1. **Atomic Changes**
+   - Each migration should be self-contained
+   - Include both 'up' and 'down' operations
+   - Test migrations in development before production
+
+2. **Security First**
+   - Enable Row Level Security (RLS) by default
+   - Define explicit policies for each operation
+   - Use `SECURITY DEFINER` for trusted functions
+
+3. **Performance Optimization**
+   - Create appropriate indexes
+   - Use JSONB for flexible data storage
+   - Add comments for documentation
+
+4. **Triggers & Functions**
+   - Automatic timestamp updates
+   - Cascading operations
+   - Data synchronization between tables
+
+### **RLS Policies**
+
+1. **Discord Profiles**
+```sql
+-- Select Policy
+CREATE POLICY "Users can view their own discord profile data"
+  ON discord_profiles FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+-- Update Policy
+CREATE POLICY "Users can update their own discord profile data"
+  ON discord_profiles FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id);
+```
+
+2. **Public Profiles**
+```sql
+-- Select Policy
+CREATE POLICY "Public profiles are viewable by everyone."
+  ON profiles FOR SELECT
+  USING (true);
+
+-- Insert Policy
+CREATE POLICY "Users can insert their own profile."
+  ON profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
+```
+
+### **Helper Functions**
+
+1. **Profile Updates**
+```sql
+CREATE OR REPLACE FUNCTION update_discord_profile_with_oauth_data(
+  p_user_id UUID,
+  p_raw_user_meta_data JSONB,
+  p_custom_claims JSONB,
+  p_discord_data JSONB
+) RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER;
+```
+
+2. **Timestamp Management**
+```sql
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### **Migration Strategy**
+
+1. **Development**
+   - Use `supabase db reset` for clean state
+   - Test migrations in isolation
+   - Verify RLS policies work as expected
+
+2. **Staging**
+   - Run migrations on copy of production data
+   - Verify performance with realistic data volume
+   - Check for potential conflicts
+
+3. **Production**
+   - Schedule migrations during low-traffic periods
+   - Have rollback plan ready
+   - Monitor performance after deployment
